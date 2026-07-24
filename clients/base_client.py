@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 
-from schemas import ChatMessage, ModelParams, ModelResponse
+from schemas import ChatMessage, ErrorResponse, ModelParams, ModelResponse
 
 
 class BaseLLMClient(ABC):
@@ -12,7 +12,7 @@ class BaseLLMClient(ABC):
         self,
         messages: list[ChatMessage],
         params: ModelParams | None = None,
-    ) -> ModelResponse:
+    ) -> ModelResponse | ErrorResponse:
         """Respuesta completa (no streaming)."""
         pass
 
@@ -21,6 +21,6 @@ class BaseLLMClient(ABC):
         self,
         messages: list[ChatMessage],
         params: ModelParams | None = None,
-    ) -> AsyncIterator[str]:
+    ) -> AsyncIterator[str | ErrorResponse]:
         """Generador async de tokens (async for chunk in client.stream(...))."""
         pass
