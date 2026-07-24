@@ -1,27 +1,111 @@
 # Unified-Async-LLM-Client
 
-## Pre-entrega 1: Cliente de LLM robusto y asíncrono
+Cliente LLM unificado y asíncrono para **OpenAI**, **Anthropic** y **Gemini**, con validación Pydantic, streaming y manejo controlado de errores.
 
-### Qué construir
+## Requisitos
 
-Debes entregar un repositorio de código (o un archivo Python estructurado) que contenga la implementación de un **Unified Async LLM Client**.
+- Python 3.12+
+- Una API key del proveedor que vayas a usar
 
-Este artefacto debe ser una clase (o conjunto de clases) en **Python 3.12** que permita:
+## 1. Crear el entorno virtual
 
-- **Intercambiabilidad:** Poder instanciar un proveedor (OpenAI o Anthropic) bajo una interfaz común.
-- **Asincronía:** Todas las llamadas a modelos deben ser no bloqueantes (`async`/`await`).
-- **Streaming:** Implementar un método que devuelva un generador asíncrono de tokens.
-- **Validación:** Uso de Pydantic para definir la estructura de los mensajes de entrada y la configuración del modelo.
+Desde la raíz del repositorio:
 
-### Pasos sugeridos
+```bash
+python -m venv env
+```
 
-1. **Estructura de datos:** Crea un archivo `schemas.py` con Pydantic para definir `ChatMessage` (`role`, `content`) y `ModelResponse`. Implementar esto primero evita el "error de diccionarios anidados" tan común en principiantes.
-2. **La base asíncrona:** Define una clase base abstracta `BaseLLMClient` con un método `async def generate()`.
-3. **Implementación del proveedor:** Crea `OpenAIClient` y `AnthropicClient` heredando de la base. Usa los SDKs oficiales (`openai` y `anthropic`) en sus versiones asíncronas (`AsyncOpenAI` y `AsyncAnthropic`).
-4. **Lógica de streaming:** Implementa el generador usando `yield` dentro de un loop `async for` que recorra el stream del SDK.
-5. **Script de validación:** Crea un archivo `main.py` simple que importe tus clientes, cargue el `.env` y realice una pregunta corta ("¿Qué es la entropía?") tanto en modo normal como en streaming.
+Activar el entorno:
 
-### Errores comunes a evitar
+**Windows (PowerShell):**
 
-- **Bloqueo del event loop:** Un error clásico de nivel intermedio es usar la versión síncrona del cliente dentro de una función `async`. Esto detiene todo el programa mientras el LLM "piensa". Asegúrate de usar `await client.chat.completions.create(...)`.
-- **Fuga de excepciones:** No dejes que un error de "API Key inválida" o "Límite de cuota" rompa el loop principal. Captura la excepción y devuelve un mensaje estructurado o haz un reintento (retry).
+```powershell
+.\env\Scripts\Activate.ps1
+```
+
+**Linux / macOS:**
+
+```bash
+source env/bin/activate
+```
+
+Instalar dependencias:
+
+```bash
+pip install -r requirements.txt
+```
+
+## 2. Variables de entorno
+
+Copiá el ejemplo y completá tus claves:
+
+```bash
+cp .env.example .env
+```
+
+Contenido de `.env`:
+
+```env
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=tu_api_key_gemini
+OPENAI_API_KEY=tu_api_key_openai
+ANTHROPIC_API_KEY=tu_api_key_anthropic
+```
+
+| Variable | Descripción |
+|----------|-------------|
+| `LLM_PROVIDER` | Proveedor activo: `openai`, `anthropic` o `gemini` |
+| `OPENAI_API_KEY` | Clave de OpenAI (si usás `openai`) |
+| `ANTHROPIC_API_KEY` | Clave de Anthropic (si usás `anthropic`) |
+| `GEMINI_API_KEY` | Clave de Google Gemini (si usás `gemini`) |
+
+Solo necesitás la API key del proveedor elegido en `LLM_PROVIDER`.
+
+## 3. Ejecutar el script de prueba
+
+Con el entorno activado y el `.env` configurado:
+
+```bash
+python main.py
+```
+
+El script pregunta **"¿Qué es la entropía?"** en:
+
+1. **Modo normal** (`generate`) — respuesta completa
+2. **Modo streaming** — tokens a medida que llegan
+
+## Estructura
+
+```
+├── main.py                 # Script de prueba
+├── manager.py              # AsyncLLMManager (elige el proveedor)
+├── config.py               # Carga de .env y defaults
+├── schemas.py              # Modelos Pydantic
+├── clients/
+│   ├── base_client.py      # Interfaz común
+│   ├── openai_client.py
+│   ├── anthropic_client.py
+│   └── gemini_client.py
+├── requirements.txt
+└── .env.example
+```
+
+## Uso rápido en código
+
+```python
+import asyncio
+from manager import AsyncLLMManager
+from schemas import ChatMessage, ErrorResponse, ModelParams
+
+async def demo():
+    manager = AsyncLLMManager()  # lee LLM_PROVIDER del .env
+    messages = [ChatMessage(role="user", content="Hola")]
+
+    result = await manager.generate(messages, ModelParams())
+    if isinstance(result, ErrorResponse):
+        print(result.error_type, result.error)
+    else:
+        print(result.content)
+
+asyncio.run(demo())
+```
