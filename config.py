@@ -14,7 +14,7 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 DEFAULT_MODELS = {
     "gemini": "gemini-3.1-flash-lite",
     "openai": "gpt-4o-mini",
-    "anthropic": "claude-3.5-haiku-lastest",
+    "anthropic": "claude-3-5-haiku-latest",
 }
 
 DEFAULT_MODEL = DEFAULT_MODELS.get(LLM_PROVIDER, "gemini-3.1-flash-lite")
